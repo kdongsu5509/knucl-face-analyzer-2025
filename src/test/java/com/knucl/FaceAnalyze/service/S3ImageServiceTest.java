@@ -6,6 +6,8 @@ import com.knucl.FaceAnalyze.myException.ErrorCode;
 import com.knucl.FaceAnalyze.myException.S3Exception;
 import java.net.URI;
 import java.net.URL;
+import lombok.extern.slf4j.Slf4j;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,10 +18,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
 
+@Slf4j
 class S3ImageServiceTest {
 
     @InjectMocks
@@ -60,5 +64,14 @@ class S3ImageServiceTest {
         });
 
         assertEquals(ErrorCode.EMPTY_FILE_EXCEPTION.getMessage(), exception.getMessage());
+    }
+
+    @Test
+    void testDeleteImageFromS3() {
+        String imageAddress = "https://example.com/test.jpg";
+
+        // 정상적인 삭제 시나리오
+        doNothing().when(mockAmazonS3).deleteObject(anyString(), anyString());
+        assertDoesNotThrow(() -> s3ImageService.deleteImageFromS3(imageAddress));
     }
 }
