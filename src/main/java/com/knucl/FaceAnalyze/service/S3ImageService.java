@@ -1,32 +1,24 @@
 package com.knucl.FaceAnalyze.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.util.IOUtils;
 import com.knucl.FaceAnalyze.myException.ErrorCode;
 import com.knucl.FaceAnalyze.myException.S3Exception;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
 public class S3ImageService {
 
@@ -35,6 +27,11 @@ public class S3ImageService {
     @Value("${cloud.aws.s3.bucketName}")
     private String bucketName;
 
+    public S3ImageService(AmazonS3 amazonS3) {
+        this.amazonS3 = amazonS3;
+    }
+
+
     /**
      * Method1. upload image to S3
      *
@@ -42,64 +39,27 @@ public class S3ImageService {
      * @return image address
      * @throws S3Exception
      */
-    public String upload(MultipartFile image) throws S3Exception {
+    public String upload(MultipartFile image) throws S3Exception, IOException {
         if (image.isEmpty() || Objects.isNull(image.getOriginalFilename())) {
             throw new S3Exception(ErrorCode.EMPTY_FILE_EXCEPTION);
         }
-        return this.uploadImage(image);
+
+        String fileName = "/" + UUID.randomUUID().toString() + image.getName();
+        //메타 데이터 설정
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.setContentType(image.getContentType());
+        objectMetadata.setContentLength(image.getSize());
+
+        //파일 업로드 요청
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, fileName, image.getInputStream(),
+                objectMetadata);
+
+        amazonS3.putObject(putObjectRequest);
+
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, amazonS3.getRegionName(),
+                fileName);
     }
 
-    private String uploadImage(MultipartFile image) throws S3Exception {
-        this.validateImageFileExtention(image.getOriginalFilename());
-        try {
-            return this.uploadImageToS3(image);
-        } catch (IOException e) {
-            throw new S3Exception(ErrorCode.IO_EXCEPTION_ON_IMAGE_UPLOAD);
-        }
-    }
-
-    private void validateImageFileExtention(String filename) throws S3Exception {
-        int lastDotIndex = filename.lastIndexOf(".");
-        if (lastDotIndex == -1) {
-            throw new S3Exception(ErrorCode.NO_FILE_EXTENTION);
-        }
-
-        String extention = filename.substring(lastDotIndex + 1).toLowerCase();
-        List<String> allowedExtentionList = Arrays.asList("jpg", "jpeg", "png", "gif");
-
-        if (!allowedExtentionList.contains(extention)) {
-            throw new S3Exception(ErrorCode.INVALID_FILE_EXTENTION);
-        }
-    }
-
-    private String uploadImageToS3(MultipartFile image) throws IOException, S3Exception {
-        String originalFilename = image.getOriginalFilename(); //원본 파일 명
-        String extention = originalFilename.substring(originalFilename.lastIndexOf(".")); //확장자 명
-
-        String s3FileName = UUID.randomUUID().toString().substring(0, 10) + originalFilename; //변경된 파일 명
-
-        InputStream is = image.getInputStream();
-        byte[] bytes = IOUtils.toByteArray(is);
-
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType("image/" + extention);
-        metadata.setContentLength(bytes.length);
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-
-        try {
-            PutObjectRequest putObjectRequest =
-                    new PutObjectRequest(bucketName, s3FileName, byteArrayInputStream, metadata)
-                            .withCannedAcl(CannedAccessControlList.PublicRead);
-            amazonS3.putObject(putObjectRequest); // put image to S3
-        } catch (Exception e) {
-            throw new S3Exception(ErrorCode.PUT_OBJECT_EXCEPTION);
-        } finally {
-            byteArrayInputStream.close();
-            is.close();
-        }
-
-        return amazonS3.getUrl(bucketName, s3FileName).toString();
-    }
 
     public void deleteImageFromS3(String imageAddress) throws S3Exception {
         String key = getKeyFromImageAddress(imageAddress);
