@@ -6,6 +6,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.knucl.FaceAnalyze.service.S3ImageService;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import lombok.AllArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -25,11 +27,11 @@ public class AnalyzeController {
     private final ChatClient chatClient;
 
     @PostMapping("/face")
-    public String analyzeFace(String imgAddress) throws IOException {
+    public String analyzeFace(String imgAddress) throws IOException, RuntimeException {
         MimeType mimeType = resolveMimeTypeFromS3Url(imgAddress);
 
         try {
-            URL url = new URL(imgAddress); // Validate URL format here
+            URL url = new URI(imgAddress).toURL(); // Validate URL format here
             return chatClient.prompt()
                     .user(userSpec -> userSpec
                             .text("")
@@ -39,6 +41,8 @@ public class AnalyzeController {
                     .content();
         } catch (MalformedURLException e) {
             return "Invalid URL: " + e.getMessage(); // Return or log an appropriate error message
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
