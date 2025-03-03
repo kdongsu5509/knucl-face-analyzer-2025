@@ -15,6 +15,7 @@ import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @AllArgsConstructor
@@ -27,14 +28,14 @@ public class AnalyzeController {
     private final ChatClient chatClient;
 
     @PostMapping("/face")
-    public String analyzeFace(String imgAddress) throws IOException, RuntimeException {
+    public String analyzeFace(@RequestParam("imgAddress") String imgAddress) throws IOException, RuntimeException {
         MimeType mimeType = resolveMimeTypeFromS3Url(imgAddress);
 
         try {
             URL url = new URI(imgAddress).toURL(); // Validate URL format here
             return chatClient.prompt()
                     .user(userSpec -> userSpec
-                            .text("")
+                            .text("스스로 관상가라고 생각해봐. 얼굴의 각 요소에 대해 설명한 다음 마지막에 총괄적인 내용도 말해줘. 마크다운 형식은 사용하지 말아줘.")
                             .media(MimeType.valueOf(mimeType.toString()),
                                     url)) // Convert MimeType to String for media method
                     .call()
