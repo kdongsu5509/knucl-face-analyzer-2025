@@ -2,6 +2,7 @@ package com.knucl.FaceAnalyze.controller;
 
 import com.knucl.FaceAnalyze.myException.S3Exception;
 import com.knucl.FaceAnalyze.service.S3ImageService;
+import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +16,7 @@ public class ImgController {
     private S3ImageService imgService;
 
     @PostMapping()
-    public String upload(MultipartFile img) throws S3Exception {
+    public String upload(MultipartFile img) throws S3Exception, IOException {
         return imgService.upload(img);
     }
 
