@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @AllArgsConstructor
 @RestController
@@ -28,22 +29,26 @@ public class AnalyzeController {
     private final ChatClient chatClient;
 
     @PostMapping("/face")
-    public String analyzeFace(@RequestParam("imgAddress") String imgAddress) throws IOException, RuntimeException {
+    public Flux<String> analyzeFace(@RequestParam("imgAddress") String imgAddress)
+            throws IOException, RuntimeException {
         MimeType mimeType = resolveMimeTypeFromS3Url(imgAddress);
 
         try {
             URL url = new URI(imgAddress).toURL(); // Validate URL format here
-            return chatClient.prompt()
+            String result = chatClient.prompt()
                     .user(userSpec -> userSpec
                             .text("스스로 관상가라고 생각해봐. 얼굴의 각 요소에 대해 설명한 다음 마지막에 총괄적인 내용도 말해줘. 마크다운 형식은 사용하지 말아줘.")
                             .media(MimeType.valueOf(mimeType.toString()),
                                     url)) // Convert MimeType to String for media method
                     .call()
                     .content();
-        } catch (MalformedURLException e) {
-            return "Invalid URL: " + e.getMessage(); // Return or log an appropriate error message
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            assert result != null;
+            return Flux.fromArray(result.split(""));
+        } catch (URISyntaxException | MalformedURLException e) {
+            return Flux.fromArray(
+                    ("Invalid URL: " + e.getMessage()).split("")); // Return or log an appropriate error message
+        } catch (Exception e) {
+            return Flux.error(new RuntimeException("Error processing image analysis: " + e.getMessage()));
         }
     }
 
