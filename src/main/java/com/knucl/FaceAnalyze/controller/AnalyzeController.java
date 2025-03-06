@@ -28,7 +28,7 @@ public class AnalyzeController {
     private final S3ImageService imgService;
     private final ChatClient chatClient;
 
-    @PostMapping("/face")
+    @PostMapping(value = "/face", produces = "text/event-stream")
     public Flux<String> analyzeFace(@RequestParam("imgAddress") String imgAddress)
             throws IOException, RuntimeException {
         MimeType mimeType = resolveMimeTypeFromS3Url(imgAddress);
