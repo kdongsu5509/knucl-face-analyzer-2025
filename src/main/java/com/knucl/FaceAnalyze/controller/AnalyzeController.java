@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.knucl.FaceAnalyze.service.S3ImageService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -28,6 +29,7 @@ public class AnalyzeController {
     private final S3ImageService imgService;
     private final ChatClient chatClient;
 
+    @Tag(name = "Response Estimate", description = "Response Estimate API")
     @PostMapping(value = "/face", produces = "text/event-stream")
     public Flux<String> analyzeFace(@RequestParam("imgAddress") String imgAddress)
             throws IOException, RuntimeException {
