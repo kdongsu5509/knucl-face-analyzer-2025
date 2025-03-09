@@ -3,12 +3,9 @@ package com.knucl.FaceAnalyze.controller;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.knucl.FaceAnalyze.service.S3ImageService;
+import groovy.util.logging.Slf4j;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import lombok.AllArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -18,21 +15,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 
+@lombok.extern.slf4j.Slf4j
+@Slf4j
 @AllArgsConstructor
 @RestController
 @RequestMapping("/analyze")
 public class AnalyzeController {
 
     private final AmazonS3 amazonS3;
-    private final S3ImageService imgService;
     private final ChatClient chatClient;
 
     @Tag(name = "Response Estimate", description = "Response Estimate API")
-    @PostMapping(value = "/face", produces = "text/event-stream")
-    public Flux<String> analyzeFace(@RequestParam("imgAddress") String imgAddress)
-            throws IOException, RuntimeException {
+    @PostMapping("/face")
+    public String analyzeFace(@RequestParam("imgAddress") String imgAddress) {
         MimeType mimeType = resolveMimeTypeFromS3Url(imgAddress);
 
         try {
@@ -45,12 +41,10 @@ public class AnalyzeController {
                     .call()
                     .content();
             assert result != null;
-            return Flux.fromArray(result.split(""));
-        } catch (URISyntaxException | MalformedURLException e) {
-            return Flux.fromArray(
-                    ("Invalid URL: " + e.getMessage()).split("")); // Return or log an appropriate error message
+            return result;
         } catch (Exception e) {
-            return Flux.error(new RuntimeException("Error processing image analysis: " + e.getMessage()));
+            log.error(e.getMessage(), e);
+            return "Error analyzing face";
         }
     }
 
