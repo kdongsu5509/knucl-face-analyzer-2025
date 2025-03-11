@@ -26,7 +26,7 @@ public class AnalyzeService {
         URL url = new URI(imageUrl).toURL(); // Validate URL format here
         String result = chatClient.prompt()
                 .user(userSpec -> userSpec
-                        .text("스스로 관상가라고 생각해봐. 얼굴의 각 요소에 대해 설명한 다음 마지막에 총괄적인 내용도 말해줘. 마크다운 형식은 사용하지 말아줘.")
+                        .text("스스로 관상가라고 생각하고 관상가 처럼 답변해줘. 처음에는 총괄적인 평가를 1~3줄로 요약해서 알려줘. 그 다음에 얼굴의 각 요소에 대해 설명해줘. 양식은 \"총평: ${너가 만들 총평} \n\n\n ${얼굴 각 요소에 대한 평가}\" 식으로 해줘. 마크다운 형식은 사용하지 말아줘.")
                         .media(MimeType.valueOf(mimeType.toString()),
                                 url)) // Convert MimeType to String for media method
                 .call()
