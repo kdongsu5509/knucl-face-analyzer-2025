@@ -1,7 +1,4 @@
 FROM openjdk:21
-
+COPY ./build/libs/FaceAnalyze-0.0.1-SNAPSHOT.jar /app/faceAnalyzer.jar
 WORKDIR /app
-
-COPY out/artifacts/FaceAnalyze_main_jar/FaceAnalyze.main.jar /app/FaceAnalyze.main.jar
-
-CMD ["java", "-jar", "FaceAnalyze.main.jar"]
+CMD ["java", "-jar", "faceAnalyzer.jar"]
