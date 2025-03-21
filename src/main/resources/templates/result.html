@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>분석 결과</title>
+    <style>
+        body {
+            background-color: #cdc5b1;
+            font-family: sans-serif;
+            padding: 2% 5%;
+        }
+
+        .container {
+            border: 1px solid black;
+            border-radius: 12px;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-box {
+            border: 1px solid #999;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        img.result-image {
+            width: 25%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .icon {
+            font-size: 20px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="title-bar">
+    <h2>분석 결과</h2>
+</div>
+
+<div class="container">
+    <div style="text-align: center;">
+        <img th:src="${imageUrl}" alt="분석 이미지" class="result-image"/>
+    </div>
+
+    <div class="result-box">
+        <pre th:text="${resultText}">결과를 불러오는 중입니다...</pre>
+    </div>
+</div>
+
+<script>
+    function share() {
+        alert("공유 기능은 준비 중입니다.");
+    }
+</script>
+
+</body>
+</html>
