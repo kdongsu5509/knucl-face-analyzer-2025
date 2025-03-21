@@ -35,8 +35,8 @@ public class AnalyzeService {
                 .call()
                 .content();
         assert result != null;
-        AnalyzeResultDTO analyzeResultDTO = new AnalyzeResultDTO(resultRepository.saveResult(result).toString(),
-                result);
+        AnalyzeResultDTO analyzeResultDTO = new AnalyzeResultDTO(result,
+                resultRepository.saveResult(result).toString());
         return analyzeResultDTO;
     }
 
