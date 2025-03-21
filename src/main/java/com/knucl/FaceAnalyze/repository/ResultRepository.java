@@ -3,9 +3,11 @@ package com.knucl.FaceAnalyze.repository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public class ResultRepository {
-    static Map<UUID, String> result = new HashMap<>();
+    private static Map<UUID, String> result = new HashMap<>();
 
     public static UUID saveResult(String result) {
         UUID uuid = UUID.randomUUID();
