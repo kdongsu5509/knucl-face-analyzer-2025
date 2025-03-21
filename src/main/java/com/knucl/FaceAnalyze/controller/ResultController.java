@@ -7,7 +7,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
+@lombok.extern.slf4j.Slf4j
 @Controller
 @AllArgsConstructor
 public class ResultController {
@@ -20,10 +22,13 @@ public class ResultController {
      * @param model
      * @return
      */
-    @GetMapping("/face/result/{uuid}")
-    public String showResult(@PathVariable String uuid, Model model) {
+    @GetMapping("/knucl/{uuid}")
+    public String showResult(@PathVariable String uuid, @RequestParam String data, Model model) {
+        log.info("Showing result with uuid {}", uuid);
+        log.info("Showing result with data {}", data);
         String resultText = resultRepository.getResult(UUID.fromString(uuid));
         model.addAttribute("resultText", resultText);
+        model.addAttribute("imageUrl", data);
         return "result";
     }
 }

@@ -35,6 +35,8 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
+    // https://mvnrepository.com/artifact/org.thymeleaf/thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-aws
     implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
     implementation 'org.projectlombok:lombok:1.18.34'
