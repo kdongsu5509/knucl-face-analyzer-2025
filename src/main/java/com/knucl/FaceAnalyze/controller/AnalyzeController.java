@@ -1,6 +1,7 @@
 package com.knucl.FaceAnalyze.controller;
 
 import com.knucl.FaceAnalyze.dto.AnalyzeResultDTO;
+import com.knucl.FaceAnalyze.repository.UserCountRepository;
 import com.knucl.FaceAnalyze.service.AnalyzeService;
 import groovy.util.logging.Slf4j;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,13 +19,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AnalyzeController {
 
     AnalyzeService analyzeService;
+    UserCountRepository userCountRepository;
 
     @Tag(name = "Response Estimate", description = "Response Estimate API")
     @PostMapping("/face")
     public AnalyzeResultDTO analyzeFace(@RequestParam("imgAddress") String imgAddress) {
 
-        //TODO : 반환값 변경 필요. (UUID 도 제공해줘야함)
         try {
+            userCountRepository.increaseUserCount();
+            log.info("User Count: " + userCountRepository.getUserCount());
             return analyzeService.analyzeImage(imgAddress);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
