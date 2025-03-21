@@ -3,6 +3,7 @@ package com.knucl.FaceAnalyze.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.knucl.FaceAnalyze.dto.AnalyzeResultDTO;
 import com.knucl.FaceAnalyze.repository.ResultRepository;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -22,7 +23,7 @@ public class AnalyzeService {
     private final ChatClient chatClient;
     private final ResultRepository resultRepository;
 
-    public String analyzeImage(String imageUrl) throws URISyntaxException, MalformedURLException {
+    public AnalyzeResultDTO analyzeImage(String imageUrl) throws URISyntaxException, MalformedURLException {
         MimeType mimeType = resolveMimeTypeFromS3Url(imageUrl);
 
         URL url = new URI(imageUrl).toURL(); // Validate URL format here
@@ -34,8 +35,9 @@ public class AnalyzeService {
                 .call()
                 .content();
         assert result != null;
-        resultRepository.saveResult(result);
-        return result;
+        AnalyzeResultDTO analyzeResultDTO = new AnalyzeResultDTO(resultRepository.saveResult(result).toString(),
+                result);
+        return analyzeResultDTO;
     }
 
     private MimeType resolveMimeTypeFromS3Url(String url) {
