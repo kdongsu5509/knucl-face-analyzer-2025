@@ -26,5 +26,4 @@ public class ResultController {
         model.addAttribute("resultText", resultText);
         return "result";
     }
-
 }
