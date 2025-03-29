@@ -29,11 +29,11 @@ jobs:
     - name: give authority to linux for build gradle
       run: chmod +x ./gradlew
       
-    - name : give the application-secret,yaml via github actions secret
-    - run: touch ./src/main/resources/application-secret.properties
+    - name : make secret files
+      run: touch ./src/main/resources/application-secret.properties
+
+    - name: write a info to that file
     - run: echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
-    - run: cat ./src/main/resources/application-secret.properties
-      
           
     - name: Build with Gradle Wrapper
       run: ./gradlew build
