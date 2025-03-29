@@ -33,7 +33,7 @@ jobs:
       run: touch ./src/main/resources/application-secret.properties
 
     - name: write a info to that file
-    - run: echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
+      run:  echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
           
     - name: Build with Gradle Wrapper
       run: ./gradlew build
