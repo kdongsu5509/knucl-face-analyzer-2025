@@ -1,6 +1,7 @@
 name: 'Deploy to Cloud Run'
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["CI, build docker image and push that"]
     types:
@@ -12,12 +13,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install gcloud CLI
+      - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_NAME }}
           service_account_key: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
           export_default_credentials: true
+
+      - name: Write credentials to disk
+        run: echo '${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcloud-key.json
+
+      - name: Set GOOGLE_APPLICATION_CREDENTIALS env var
+        run: echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Get previous revision
         id: previous
@@ -36,7 +43,7 @@ jobs:
           region: asia-northeast3
           credentials: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
 
-      - name: Wait for service warm-up
+      - name: Wait for service to warm up
         run: sleep 10
 
       - name: Health check
@@ -49,7 +56,7 @@ jobs:
       - name: Rollback if health check failed
         if: ${{ steps.health.outputs.status != '200' }}
         run: |
-          echo "Health check failed. Rolling back to previous revision: ${{ steps.previous.outputs.prev_revision }}"
+          echo "⚠️ Health check failed. Rolling back to previous revision: ${{ steps.previous.outputs.prev_revision }}"
           gcloud run services update-traffic knuclface-service \
             --region=asia-northeast3 \
             --to-revisions=${{ steps.previous.outputs.prev_revision }}=100
