@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-gradle:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -52,12 +52,9 @@ jobs:
         name: build-output
         path: build/libs/*.jar
 
-  dockerbuild:
+  docker-publish-to-gcp:
     needs: build
     runs-on: ubuntu-22.04
-
-    outputs:
-      image_tag: ${{ needs.build.outputs.image_tag }}
 
     steps:
     - uses: actions/checkout@v4
@@ -67,18 +64,6 @@ jobs:
       with:
         name: build-output
 
-    - name: Build Docker image
-      run: docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
-
-    - name: Save image tag for next job
-      run: |
-        echo Image built: knuclface:${{ needs.build.outputs.image_tag }}
-
-  use-gcp-ar:
-    needs: dockerbuild
-    runs-on: ubuntu-22.04
-
-    steps:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -87,9 +72,14 @@ jobs:
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
 
+    - name: Build Docker image
+      run: |
+        docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
+
     - name: Tag image for Artifact Registry
       run: |
-        docker tag knuclface:${{ needs.dockerbuild.outputs.image_tag }} asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
+        docker tag knuclface:${{ needs.build.outputs.image_tag }} \
+        asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
     - name: Push image to Artifact Registry
       run: |
