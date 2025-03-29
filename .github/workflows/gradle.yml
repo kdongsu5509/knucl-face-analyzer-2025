@@ -89,8 +89,7 @@ jobs:
 
     - name: Tag image for Artifact Registry
       run: |
-        docker tag knuclface:${{ needs.dockerbuild.outputs.image_tag }} \
-        asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
+        docker tag knuclface:${{ needs.dockerbuild.outputs.image_tag }} asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
     - name: Push image to Artifact Registry
       run: |
