@@ -2,9 +2,9 @@ name: CI, build docker image and push that
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build-gradle:
@@ -16,89 +16,89 @@ jobs:
       image_tag: ${{ steps.timestamp.outputs.tag }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'jetbrains'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "jetbrains"
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-    - name: Give execute permission to Gradle wrapper
-      run: chmod +x ./gradlew
+      - name: Give execute permission to Gradle wrapper
+        run: chmod +x ./gradlew
 
-    - name: Create secret properties file
-      run: |
-        mkdir -p ./src/main/resources
-        echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
+      - name: Create secret properties file
+        run: |
+          mkdir -p ./src/main/resources
+          echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
 
-    - name: Create application.properties to import secret
-      run: |
-        echo "spring.config.import=classpath:application-secret.properties" > ./src/main/resources/application.properties
+      - name: Create application.properties to import secret
+        run: |
+          echo "spring.config.import=classpath:application-secret.properties" > ./src/main/resources/application.properties
 
-    - name: Build with Gradle
-      run: ./gradlew build
+      - name: Build with Gradle
+        run: ./gradlew build
 
-    - name: Set image tag
-      id: timestamp
-      run: echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
+      - name: Set image tag
+        id: timestamp
+        run: echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
 
-    - name: Upload JAR artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output
-        path: build/libs/*.jar
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build/libs/*.jar
 
   docker-publish-to-gcp:
-    needs: build
+    needs: build-gradle
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: build-output
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-    - name: Configure Docker for Artifact Registry
-      run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
 
-    - name: Build Docker image
-      run: |
-        docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
+      - name: Build Docker image
+        run: |
+          docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
 
-    - name: Tag image for Artifact Registry
-      run: |
-        docker tag knuclface:${{ needs.build.outputs.image_tag }} \
-        asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
+      - name: Tag image for Artifact Registry
+        run: |
+          docker tag knuclface:${{ needs.build.outputs.image_tag }} \
+          asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
-    - name: Push image to Artifact Registry
-      run: |
-        docker push asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
+      - name: Push image to Artifact Registry
+        run: |
+          docker push asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
   dependency-submission:
-
+    needs: docker-publish-to-gcp
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'jetbrains'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "jetbrains"
 
-    - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
