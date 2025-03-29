@@ -41,6 +41,23 @@ jobs:
     - name: Build with Gradle Wrapper
       run: ./gradlew build
 
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag knuclface:$(date +%s)
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
+
+    - name: Tag image
+      run: docker tag knuclface:$(date +%s) asia-northeast3-docker.pkg.dev/%{{secrets.GCP_PROJECT_NAME}}/%{{secrets.GCP_AR_NAME}}/knuclface:latest
+
+    - name: Push image
+      run: docker push asia-northeast3-docker.pkg.dev/YOUR_PROJECT/YOUR_REPO/knuclface:latest
+
   dependency-submission:
 
     runs-on: ubuntu-latest
