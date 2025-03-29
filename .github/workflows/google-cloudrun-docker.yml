@@ -39,7 +39,7 @@ jobs:
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: knuclface-service
+          service: knucl cloud run deployer
           image: asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
           region: asia-northeast3
           credentials: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
