@@ -9,22 +9,16 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Google Cloud SDK
+      - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_NAME }}
           service_account_key: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
           export_default_credentials: true
-
-      - name: Write credentials to disk
-        run: echo '${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}' > ${{ github.workspace }}/gcloud-key.json
-
-      - name: Set GOOGLE_APPLICATION_CREDENTIALS env var
-        run: echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Get previous revision
         id: previous
