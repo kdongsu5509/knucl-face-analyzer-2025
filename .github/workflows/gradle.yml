@@ -74,11 +74,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
+          docker build . -t knuclface:${{ needs.build-gradle.outputs.image_tag }}
 
       - name: Tag image for Artifact Registry
         run: |
-          docker tag knuclface:${{ needs.build.outputs.image_tag }} \
+          docker tag knuclface:${{ needs.build-gradle.outputs.image_tag }} \
           asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
       - name: Push image to Artifact Registry
@@ -101,4 +101,4 @@ jobs:
           distribution: "jetbrains"
 
       - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+        uses: gradle/actions/dependency-submission@v4
