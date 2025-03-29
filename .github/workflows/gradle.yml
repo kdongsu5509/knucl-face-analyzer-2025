@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: CI, build docker image and push that
 
 on:
   push:
@@ -8,10 +8,12 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-22.04
     permissions:
       contents: read
+
+    outputs:
+      image_tag: ${{ steps.timestamp.outputs.tag }}
 
     steps:
     - uses: actions/checkout@v4
@@ -23,7 +25,7 @@ jobs:
         distribution: 'jetbrains'
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      uses: gradle/actions/setup-gradle@v4
 
     - name: Give execute permission to Gradle wrapper
       run: chmod +x ./gradlew
@@ -31,19 +33,52 @@ jobs:
     - name: Create secret properties file
       run: |
         mkdir -p ./src/main/resources
-        touch ./src/main/resources/application-secret.properties
         echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
 
     - name: Create application.properties to import secret
       run: |
         echo "spring.config.import=classpath:application-secret.properties" > ./src/main/resources/application.properties
 
-    - name: Build with Gradle Wrapper
+    - name: Build with Gradle
       run: ./gradlew build
 
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag knuclface:$(date +%s)
+    - name: Set image tag
+      id: timestamp
+      run: echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
 
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-output
+        path: build/libs/*.jar
+
+  dockerbuild:
+    needs: build
+    runs-on: ubuntu-22.04
+
+    outputs:
+      image_tag: ${{ needs.build.outputs.image_tag }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output
+
+    - name: Build Docker image
+      run: docker build . -t knuclface:${{ needs.build.outputs.image_tag }}
+
+    - name: Save image tag for next job
+      run: 
+        echo "Image built: knuclface:${{ needs.build.outputs.image_tag }}"
+
+  use-gcp-ar:
+    needs: dockerbuild
+    runs-on: ubuntu-22.04
+
+    steps:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -52,11 +87,14 @@ jobs:
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
 
-    - name: Tag image
-      run: docker tag knuclface:$(date +%s) asia-northeast3-docker.pkg.dev/%{{secrets.GCP_PROJECT_NAME}}/%{{secrets.GCP_AR_NAME}}/knuclface:latest
+    - name: Tag image for Artifact Registry
+      run: |
+        docker tag knuclface:${{ needs.dockerbuild.outputs.image_tag }} \
+        asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
-    - name: Push image
-      run: docker push asia-northeast3-docker.pkg.dev/YOUR_PROJECT/YOUR_REPO/knuclface:latest
+    - name: Push image to Artifact Registry
+      run: |
+        docker push asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
 
   dependency-submission:
 
