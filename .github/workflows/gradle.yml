@@ -30,8 +30,10 @@ jobs:
       run: chmod +x ./gradlew
       
     - name : give the application-secret,yaml via github actions secret
-      run: |
-            echo ${{secrets.SPRING_SECRET}} | base64 --decode > ./src/main/resources/application-secret.yml
+    - run: touch ./src/main/resources/application-secret.properties
+    - run: echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
+    - run: cat ./src/main/resources/application-secret.properties
+      
           
     - name: Build with Gradle Wrapper
       run: ./gradlew build
