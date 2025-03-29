@@ -72,7 +72,7 @@ jobs:
 
     - name: Save image tag for next job
       run: |
-        echo "Image built: knuclface:${{ needs.build.outputs.image_tag }}
+        echo Image built: knuclface:${{ needs.build.outputs.image_tag }}
 
   use-gcp-ar:
     needs: dockerbuild
