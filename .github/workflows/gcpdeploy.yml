@@ -1,8 +1,7 @@
 name: Deploy to GCP Compute Engine
-
 on:
   workflow_run:
-    workflows: [CI, build docker image and push that]
+    workflows: ["CI, build docker image and push that"]
     types:
       - completed
 
