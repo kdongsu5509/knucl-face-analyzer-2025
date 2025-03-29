@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# application-secret.yaml를 환경 변수로 지정.
-env:
-  SPRING_SECRET: ${{ secrets.SPRING_SECRET }}
-
 jobs:
   build:
 
@@ -32,6 +28,11 @@ jobs:
 
     - name: give authority to linux for build gradle
       run: chmod +x ./gradlew
+      
+    - name : give the application-secret,yaml via github actions secret
+      run: |
+            echo ${{secrets.SPRING_SECRET}} | base64 --decode > ./src/main/resources/application-secret.yml
+          
     - name: Build with Gradle Wrapper
       run: ./gradlew build
 
