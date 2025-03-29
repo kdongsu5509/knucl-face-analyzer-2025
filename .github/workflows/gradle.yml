@@ -15,39 +15,31 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'jetbrains'
 
-    # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
-    # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
-    - name: give authority to linux for build gradle
+    - name: Give execute permission to Gradle wrapper
       run: chmod +x ./gradlew
-      
-    - name : make secret files
-      run: touch ./src/main/resources/application-secret.properties
 
-    - name: write a info to that file
-      run:  echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
-          
+    - name: Create secret properties file
+      run: |
+        mkdir -p ./src/main/resources
+        touch ./src/main/resources/application-secret.properties
+        echo "${{ secrets.SPRING_SECRET }}" > ./src/main/resources/application-secret.properties
+
+    - name: Create application.properties to import secret
+      run: |
+        echo "spring.config.import=classpath:application-secret.properties" > ./src/main/resources/application.properties
+
     - name: Build with Gradle Wrapper
       run: ./gradlew build
-
-    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
-    #
-    # - name: Setup Gradle
-    #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-    #   with:
-    #     gradle-version: '8.9'
-    #
-    # - name: Build with Gradle 8.9
-    #   run: gradle build
 
   dependency-submission:
 
@@ -57,13 +49,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'jetbrains'
 
-    # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
-    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
     - name: Generate and submit dependency graph
       uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
