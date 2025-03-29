@@ -1,0 +1,55 @@
+name: 'Deploy to Cloud Run'
+
+on:
+  workflow_run:
+    workflows: ["CI, build docker image and push that"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_NAME }}
+          service_account_key: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
+          export_default_credentials: true
+
+      - name: Get previous revision
+        id: previous
+        run: |
+          REVISION=$(gcloud run services describe knuclface-service \
+            --region=asia-northeast3 \
+            --format="value(status.traffic[0].revisionName)")
+          echo "prev_revision=$REVISION" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: knuclface-service
+          image: asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_NAME }}/${{ secrets.GCP_AR_NAME }}/knuclface:latest
+          region: asia-northeast3
+          credentials: ${{ secrets.GCP_CLOUD_RUN_ACCOUNT_KEY }}
+
+      - name: Wait for service warm-up
+        run: sleep 10
+
+      - name: Health check
+        id: health
+        continue-on-error: true
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ steps.deploy.outputs.url }})
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      - name: Rollback if health check failed
+        if: ${{ steps.health.outputs.status != '200' }}
+        run: |
+          echo "Health check failed. Rolling back to previous revision: ${{ steps.previous.outputs.prev_revision }}"
+          gcloud run services update-traffic knuclface-service \
+            --region=asia-northeast3 \
+            --to-revisions=${{ steps.previous.outputs.prev_revision }}=100
